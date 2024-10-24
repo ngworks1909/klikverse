@@ -33,7 +33,7 @@ app.use('/api/banner', bannerRouter)
 app.use('/api/game', gameRouter)
 
 app.get("/",(req,res)=>{
-    res.send("Hello User");
+    res.send(process.env.DATABASE_URL);
 })
 
 app.listen(process.env.PORT || 3001, () => {
