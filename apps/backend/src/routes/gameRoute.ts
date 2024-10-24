@@ -1,5 +1,5 @@
 import express from 'express'
-import {prisma} from "../lib/auth";
+import {prisma} from "../index";
 
 const router = express();
 

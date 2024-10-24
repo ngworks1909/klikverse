@@ -1,6 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import {prisma} from "../lib/auth";
+import {prisma} from "../index";
 import { validateUser } from '../zod/validateUser';
 
 const router = express.Router();

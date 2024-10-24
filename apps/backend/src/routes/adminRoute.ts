@@ -1,7 +1,7 @@
 import bcrypt from "argon2";
 import express from "express";
 import jwt from "jsonwebtoken";
-import {prisma} from "../lib/auth";
+import {prisma} from '../index'
 import { validateAdmin } from "../zod/validateAdmin";
 
 const router = express.Router();

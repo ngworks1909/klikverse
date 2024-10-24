@@ -9,6 +9,12 @@ import gameRouter from './routes/gameRoute'
 
 dotenv.config()
 
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export { prisma };
+
 const app = express()
 app.use(cors())
 app.use('/uploads', express.static('uploads'));

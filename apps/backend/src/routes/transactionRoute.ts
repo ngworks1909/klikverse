@@ -1,6 +1,6 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
-import {prisma} from "../lib/auth";
+import {prisma} from "../index";
 import Razorpay from 'razorpay';
 import z, { number } from 'zod'
 
