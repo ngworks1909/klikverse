@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId       String         @id @default(cuid())
+  username     String
+  otp          String
+  totalMatches Int            @default(0)
+  wonMatches   Int            @default(0)
+  totalEarning Int            @default(0)
+  mobile       String         @unique
+  role         UserRole       @default(user)
+  token        String         @default("")
+  wallet       Wallet[]
+  transactions Transactions[]
+  rooms        RoomPlayer[]    // Relation to the join table
+}
+
+enum UserRole {
+  user
+  bot
+}
+
+model Admin {
+  adminId  String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(admin)
+}
+
+enum Role {
+  admin
+  superadmin
+}
+
+model Banner {
+  bannerId  String   @id @default(cuid())
+  title     String
+  imageUrl  String
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
+}
+
+model Wallet {
+  walletId     String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  totalBalance Float    @default(0)
+  deposit      Float    @default(0)
+  winnings     Float    @default(0)
+  cashback     Float    @default(0)
+  rushRewards  Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Transactions {
+  transactionId String @id @default(cuid())
+  userId       String
+  user         User   @relation(fields: [userId], references: [userId])
+  orderId      String
+  paymentId    String?
+  signature    String?
+  currency     String   @default("INR")
+  amount       Float
+  status       TransactionStatus @default(Pending)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum TransactionStatus {
+  Pending
+  Paid
+  Failed
+}
+
+model Game {
+  gameId   String   @id @default(cuid())
+  gameType GameType
+  rooms    Room[]
+  maxPlayers Int      @default(2)
+  entryFee Float
+  prizePool Float
+  currency  String   @default("INR")
+  isActive  Boolean  @default(true)
+}
+
+model Room {
+  roomId   String   @id @default(cuid())
+  gameId   String
+  game     Game     @relation(fields: [gameId], references: [gameId])
+  players  RoomPlayer[] // Relation to the join table
+  status   GameStatus @default(Running)
+  winnerId String?
+}
+
+// Join table for Room and User
+model RoomPlayer {
+  roomId String
+  userId String
+
+  room Room @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([roomId, userId]) // Composite primary key
+}
+
+enum GameStatus {
+  Running
+  Finished
+}
+
+enum GameType {
+  LUDO
+  CRICKET
+  RUMMY
+}

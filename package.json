@@ -19,5 +19,9 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv-cli": "^7.4.2"
+  }
 }
