@@ -9,13 +9,7 @@ import gameRouter from './routes/gameRoute'
 
 dotenv.config()
 
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
-console.log(process.env.DATABASE_URL)
-
-export { prisma };
 
 const app = express()
 app.use(cors())
@@ -33,7 +27,7 @@ app.use('/api/banner', bannerRouter)
 app.use('/api/game', gameRouter)
 
 app.get("/",(req,res)=>{
-    res.send(process.env.DATABASE_URL);
+    res.send("Hello user");
 })
 
 app.listen(process.env.PORT || 3001, () => {

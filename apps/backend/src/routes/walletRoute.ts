@@ -1,6 +1,6 @@
 import express from 'express'
 import { verifyAdmin } from '../middlewares/verifyAdmin';
-import {prisma} from "../index";
+import {prisma} from '../lib/auth'
 import { authenticateToken } from '../middlewares/verifyUser';
 
 
