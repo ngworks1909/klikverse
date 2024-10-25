@@ -48,6 +48,7 @@ export class GameManager {
     private addHandler(user: User){
         user.getSocket().on('INIT_GAME', async(data) => {
             const message = JSON.parse(data)
+            console.log('INIT started')
             const {gameId} = message.payload;
             if(!gameId) return
             const gameDetails = await this.fetchGameDetails(gameId);
@@ -98,6 +99,7 @@ export class GameManager {
                 socketManager.addUser(roomId, user)
                 this.ludogames.push(game);
                 user.getSocket().send('New game created')
+                console.log('NEW game created')
                 this.pendingLudoRoomId = roomId;
             }
         });
