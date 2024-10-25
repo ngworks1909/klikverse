@@ -31,7 +31,7 @@ export class SocketManager{
             this.players.set(user.getUserId(), roomId)
         }
 
-        const data = JSON.stringify({payload: {userId: user.getUserId(), socket: user.getSocket()}})
+        const data = JSON.stringify({payload: {userId: user.getUserId(), socketId: user.getSocket().id}})
         this.broadcast(roomId, 'USER_JOINED', data)
 
     }

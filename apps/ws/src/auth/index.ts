@@ -7,7 +7,12 @@ export interface userJwtClaims {
     userId: string
 }
 
-export const extractJwtToken = (token: string, socket: Socket): User => {
+export const extractJwtToken = (token: string, socket: Socket): User | null => {
+    console.log(process.env.JWT_SECRET)
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret") as userJwtClaims;
+    console.log(decoded);
+    if(!decoded.userId){
+        return null
+    }
     return new User(decoded.userId, socket)
 }

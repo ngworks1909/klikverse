@@ -47,14 +47,16 @@ export class GameManager {
 
     private addHandler(user: User){
         user.getSocket().on('INIT_GAME', async(data) => {
-            const message = JSON.parse(data);
+            const message = JSON.parse(data)
             const {gameId} = message.payload;
+            if(!gameId) return
             const gameDetails = await this.fetchGameDetails(gameId);
             if(!gameDetails){
                 user.getSocket().send('Game not found')
                 console.log('Game not found');
                 return;
             }
+            console.log("pending room" + this.pendingLudoRoomId)
             if(this.pendingLudoRoomId){
                 const ludogame = this.ludogames.find(l => l.getRoomId() === this.pendingLudoRoomId);
                 if(!ludogame){
@@ -69,16 +71,18 @@ export class GameManager {
                 ludogame.addPlayer(user.getUserId());
                 socketManager.addUser(this.pendingLudoRoomId, user)
                 if(ludogame.getPlayerSize() === gameDetails.maxPlayers){
-                    const isGameCreated = await this.storeLudoGameToDB(ludogame)
-                    if(isGameCreated){
-                        this.pendingLudoRoomId = null;
+                    this.pendingLudoRoomId = null;
                         ludogame.startGame();
-                        return;
-                    }
-                    else{
-                        const message = JSON.stringify({payload: {roomId: this.pendingLudoRoomId}})
-                        socketManager.broadcast(this.pendingLudoRoomId, 'EXIT_GAME', message)
-                    }
+                    // const isGameCreated = await this.storeLudoGameToDB(ludogame)
+                    // if(isGameCreated){
+                    //     this.pendingLudoRoomId = null;
+                    //     ludogame.startGame();
+                    //     return;
+                    // }
+                    // else{
+                    //     const message = JSON.stringify({payload: {roomId: this.pendingLudoRoomId}})
+                    //     socketManager.broadcast(this.pendingLudoRoomId, 'EXIT_GAME', message)
+                    // }
                     
                 }
 
@@ -91,6 +95,7 @@ export class GameManager {
 
                 const roomId = createId()
                 const game = new LudoGame(gameId, roomId, user.getUserId(), winAmount);
+                socketManager.addUser(roomId, user)
                 this.ludogames.push(game);
                 user.getSocket().send('New game created')
                 this.pendingLudoRoomId = roomId;
@@ -101,6 +106,7 @@ export class GameManager {
             const message = JSON.parse(data);
             const {roomId} = message.payload;
             const ludogame = this.ludogames.find(l => l.getRoomId() === roomId);
+            console.log(ludogame?.getPlayerIds() || [])
             if(ludogame){
                 ludogame.rollDice(roomId, user.getUserId());
             }
@@ -135,8 +141,6 @@ export class GameManager {
             }
         });
 
-
-
         user.getSocket().on('EXIT_GAME', (data) => {
             const message = JSON.parse(data);
             const {roomId} = message.payload;
@@ -164,60 +168,75 @@ export class GameManager {
 
     private async storeLudoGameToDB(game: LudoGame){
         const playerIds = game.getPlayerIds();
-        const status = await prisma.$transaction(async(tx) => {
-            await tx.room.create({
-                data: {
-                    roomId: game.getRoomId(),
-                    gameId: game.getGameId(),
-                    players: {
-                        create: playerIds.map((userId) => {
-                            return {
-                                userId
-                            }
-                        })
-                    }
-                }
-            });
+        console.log(playerIds)
 
-            const gameDetails = await tx.game.findUnique({
-                where: {
-                    gameId: game.getGameId()
-                },
-                select: {
-                    entryFee: true
+        await prisma.room.create({
+            data: {
+                roomId: game.getRoomId(),
+                gameId: game.getGameId(),
+                players: {
+                    create: [
+                        {userId: playerIds[0]},
+                        {userId: playerIds[1]}
+                    ]
                 }
-            })
-
-            if(!gameDetails){
-                return false
             }
+        })
+        // const status = await prisma.$transaction(async(tx) => {
+        //     await tx.room.create({
+        //         data: {
+        //             roomId: game.getRoomId(),
+        //             gameId: game.getGameId(),
+        //             players: {
+        //                 create: playerIds.map((userId) => {
+        //                     return {
+        //                         userId
+        //                     }
+        //                 })
+        //             }
+        //         }
+        //     });
 
-            for(const playerId of playerIds){
-                const wallet = await tx.wallet.findFirst({
-                    where: {
-                        userId: playerId
-                    }
-                });
-                if(!wallet){
-                    return false
-                }
-                const {entryFee} = gameDetails;
-                await tx.wallet.update({
-                    where: {
-                        walletId: wallet?.walletId
-                    },
-                    data: {
-                        totalBalance: {
-                            decrement: entryFee
-                        },
-                        deposit: {
-                            increment: entryFee
-                        }
-                    }
-                })
-            }
-            return true;
-        });
-        return !!status
+        //     const gameDetails = await tx.game.findUnique({
+        //         where: {
+        //             gameId: game.getGameId()
+        //         },
+        //         select: {
+        //             entryFee: true
+        //         }
+        //     })
+
+        //     if(!gameDetails){
+        //         return false
+        //     }
+
+        //     for(const playerId of playerIds){
+        //         const wallet = await tx.wallet.findFirst({
+        //             where: {
+        //                 userId: playerId
+        //             }
+        //         });
+        //         if(!wallet){
+        //             return false
+        //         }
+        //         const {entryFee} = gameDetails;
+        //         await tx.wallet.update({
+        //             where: {
+        //                 walletId: wallet?.walletId
+        //             },
+        //             data: {
+        //                 totalBalance: {
+        //                     decrement: entryFee
+        //                 },
+        //                 deposit: {
+        //                     increment: entryFee
+        //                 }
+        //             }
+        //         })
+        //     }
+        //     return true;
+        // });
+        // return !!status
+        return false
     }
 }

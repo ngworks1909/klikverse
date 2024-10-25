@@ -124,9 +124,11 @@ export class LudoGame {
     }
 
     public rollDice(roomId: string, playerId: string){
+        console.log('Dice roll called')
         if(!this.isValidTurn(playerId)){
             return
         }
+        console.log('Dice rolled')
         const steps =  Math.floor(Math.random() * 6) + 1;
         const message = JSON.stringify({payload: {playerId, steps}})
         socketManager.broadcast(roomId, 'DICE_ROLLED', message);

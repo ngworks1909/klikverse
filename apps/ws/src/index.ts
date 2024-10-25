@@ -32,6 +32,9 @@ io.on('connection', (socket) => {
         return socket.disconnect(true)
     }
     const user = extractJwtToken(token, socket)
+    if(!user){
+        return socket.disconnect(true)
+    }
     gameManager.addUser(user)
     socket.send('Connected to socket server')
     
