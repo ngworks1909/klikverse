@@ -24,19 +24,22 @@ const gameManager = new GameManager();
 
 
 io.on('connection', (socket) => {
-    let token = socket.handshake.query.token
-    if (Array.isArray(token)) {
-        token = token[0]; 
-    }
-    if(!token){
-        return socket.disconnect(true)
-    }
-    const user = extractJwtToken(token, socket)
-    if(!user){
-        return socket.disconnect(true)
-    }
-    gameManager.addUser(user)
     socket.send('Connected to socket server')
+    socket.on('ADD_USER', (data) => {
+        const token = data;
+        if(!token){
+            const message = 'Token not found'
+            socket.emit('DISCONNECT_USER', message)
+            return
+        }
+        const user = extractJwtToken(token, socket)
+        if(!user){
+            const message = 'Invalid Token'
+            socket.emit('DISCONNECT_USER', message)
+            return
+        }
+        gameManager.addUser(user)
+    })
     
     socket.on('disconnect', () => {
         gameManager.removeUser(socket)
