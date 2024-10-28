@@ -1,4 +1,4 @@
-type GAME_STATUS = "Pending" | "Running" | "Finished"
+export type GAME_STATUS = "Pending" | "Running" | "Finished"
 import prisma from '../lib/auth';
 import {socketManager} from '../manager/SocketManager'
 
@@ -49,15 +49,15 @@ export class LudoGame {
     }
 
     public isValidTurn(playerId: string){
-        return this.players[this.currentTurn] !== playerId 
+        return this.players[this.currentTurn] === playerId 
     }
 
-    public makeMove(playerId: string, pieceId: number, steps: number){
+    public makeMove(playerId: string, pieceId: number){
         //check if current turn of user and event creator are same
         if(!this.isValidTurn(playerId)){
             return
         }
-
+        const steps = this.lastScore
         const isAllHome = this.playerPositions[playerId].every(position => position === 0);
         if(isAllHome && steps !== 6){
             this.nextTurn();
@@ -65,10 +65,9 @@ export class LudoGame {
         }
         const piecePosition = this.playerPositions[playerId][pieceId];
         if(steps === 6){
-            if(piecePosition === 6){
+            if(piecePosition === 0){
                 this.playerPositions[playerId][pieceId] = 1;
                 this.broadcastMove(playerId, pieceId, 1)
-                this.lastScore = 6;
                 return;
             }
         }
@@ -76,7 +75,6 @@ export class LudoGame {
         if(newPosition < 57){
             this.playerPositions[playerId][pieceId] = newPosition;
             this.broadcastMove(playerId, pieceId, newPosition)
-            this.lastScore = steps;
             this.checkForKill(newPosition, playerId);
             return
         }
@@ -125,13 +123,21 @@ export class LudoGame {
 
     public rollDice(roomId: string, playerId: string){
         console.log('Dice roll called')
+        console.log(this.players[this.currentTurn])
+        console.log(playerId)
+        console.log(this.players[this.currentTurn] === playerId)
         if(!this.isValidTurn(playerId)){
             return
         }
         console.log('Dice rolled')
         const steps =  Math.floor(Math.random() * 6) + 1;
-        const message = JSON.stringify({payload: {playerId, steps}})
+        const message = JSON.stringify({payload: {roomId, playerId, steps}})
+        this.lastScore = steps
         socketManager.broadcast(roomId, 'DICE_ROLLED', message);
+        const isAllHome = this.playerPositions[playerId].every(position => position === 0);
+        if(isAllHome && steps !== 6){
+            this.nextTurn();
+        }
     }
 
     private calculateNewPosition(piecePosition: number, steps: number){

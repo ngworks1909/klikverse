@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/auth/index.ts","./src/lib/auth.ts","./src/ludo/ludogame.ts","./src/manager/gamemanager.ts","./src/manager/socketmanager.ts"],"version":"5.6.3"}
+{"root":["./src/index.ts","./src/auth/index.ts","./src/lib/auth.ts","./src/ludo/ludogame.ts","./src/manager/gamemanager.ts","./src/manager/socketmanager.ts","./src/zod/validategame.ts"],"version":"5.6.3"}

@@ -8,11 +8,12 @@ export interface userJwtClaims {
 }
 
 export const extractJwtToken = (token: string, socket: Socket): User | null => {
-    console.log(process.env.JWT_SECRET)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret") as userJwtClaims;
-    console.log(decoded);
-    if(!decoded.userId){
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret") as userJwtClaims;
+        if(!decoded.userId) return null
+        return new User(decoded.userId, socket)
+    } catch (error) {
         return null
     }
-    return new User(decoded.userId, socket)
+    
 }
