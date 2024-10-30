@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Game` MODIFY `gameType` ENUM('LUDO', 'FAST_LUDO', 'CRICKET', 'RUMMY') NOT NULL;

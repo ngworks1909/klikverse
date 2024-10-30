@@ -4,6 +4,7 @@ import prisma from "../lib/auth";
 import {createId} from '@paralleldrive/cuid2'
 import { socketManager } from "./SocketManager";
 import { validateInitGame, validateMovePiece, validateRoomId, validateUpdateMove } from "../zod/validateGame";
+import { FastLudoGame } from "../ludo/FastLudoGame";
 
 export class User{
     private userId: string;
@@ -24,12 +25,16 @@ export class User{
 export class GameManager {
     private onlineUsers: User[];
     private ludogames: LudoGame[];
-    private pendingLudoRoomId: string | null;
+    private fastludogames: FastLudoGame[]
+    private pendingRooms: Map<string, string>
+    private roomManager: Map<string, "LUDO" | "FAST_LUDO" | "RUMMY" | "CRICKET">
 
     constructor() {
         this.onlineUsers = []
         this.ludogames = [];
-        this.pendingLudoRoomId = null;
+        this.fastludogames = []
+        this.pendingRooms = new Map();
+        this.roomManager = new Map()
     }
 
     public addUser(user: User) {
@@ -63,50 +68,99 @@ export class GameManager {
                 console.log('Game not found');
                 return;
             }
-            console.log("pending room is: " + this.pendingLudoRoomId)
-            if(this.pendingLudoRoomId){
-                const ludogame = this.ludogames.find(l => l.getRoomId() === this.pendingLudoRoomId);
-                if(!ludogame){
-                    console.log('Pending game not found');
+            const pendingRoomId = this.pendingRooms.get(gameId)
+            if(pendingRoomId){
+                if(gameDetails.gameType === "LUDO"){
+                    const ludogame = this.ludogames.find(l => l.getRoomId() === pendingRoomId);
+                    if(!ludogame){
+                        console.log('Pending ludo game not found');
+                        return
+                    }
+                    if(user.getUserId() in ludogame.getPlayerIds()){
+                        user.getSocket().emit('GAME_ALERT', {message: 'Trying to connect with yourself?'});
+                        return
+                    };
+                    ludogame.addPlayer(user.getUserId());
+                    socketManager.addUser(pendingRoomId, user)
+                    if(ludogame.getPlayerSize() === gameDetails.maxPlayers){
+                        this.pendingRooms.set(gameId, "")
+                            this.roomManager.set(pendingRoomId, "LUDO")
+                            ludogame.startGame();
+                        // const isGameCreated = await this.storeLudoGameToDB(ludogame)
+                        // if(isGameCreated){
+                        //     this.pendingLudoRoomId = null;
+                        //     ludogame.startGame();
+                        //     return;
+                        // }
+                        // else{
+                        //     const message = JSON.stringify({payload: {roomId: this.pendingLudoRoomId}})
+                        //     socketManager.broadcast(this.pendingLudoRoomId, 'EXIT_GAME', message)
+                        // }
+                        
+                    }
                     return
                 }
-                if(user.getUserId() in ludogame.getPlayerIds()){
-                    user.getSocket().emit('GAME_ALERT', {message: 'Trying to connect with yourself?'});
-                    return
-                };
 
-                ludogame.addPlayer(user.getUserId());
-                socketManager.addUser(this.pendingLudoRoomId, user)
-                if(ludogame.getPlayerSize() === gameDetails.maxPlayers){
-                    this.pendingLudoRoomId = null;
-                        ludogame.startGame();
-                    // const isGameCreated = await this.storeLudoGameToDB(ludogame)
-                    // if(isGameCreated){
-                    //     this.pendingLudoRoomId = null;
-                    //     ludogame.startGame();
-                    //     return;
-                    // }
-                    // else{
-                    //     const message = JSON.stringify({payload: {roomId: this.pendingLudoRoomId}})
-                    //     socketManager.broadcast(this.pendingLudoRoomId, 'EXIT_GAME', message)
-                    // }
-                    
+                if(gameDetails.gameType === "FAST_LUDO"){
+                    const fastludogame = this.fastludogames.find(l => l.getRoomId() === pendingRoomId);
+                    if(!fastludogame){
+                        console.log('Pending ludo game not found');
+                        return
+                    }
+                    if(user.getUserId() in fastludogame.getPlayerIds()){
+                        user.getSocket().emit('GAME_ALERT', {message: 'Trying to connect with yourself?'});
+                        return
+                    };
+                    fastludogame.addPlayer(user.getUserId());
+                    socketManager.addUser(pendingRoomId, user)
+                    if(fastludogame.getPlayerSize() === gameDetails.maxPlayers){
+                            this.pendingRooms.set(gameId, "")
+                            this.roomManager.set(pendingRoomId, "FAST_LUDO")
+                            fastludogame.startGame();
+                        // const isGameCreated = await this.storeLudoGameToDB(ludogame)
+                        // if(isGameCreated){
+                        //     this.pendingLudoRoomId = null;
+                        //     ludogame.startGame();
+                        //     return;
+                        // }
+                        // else{
+                        //     const message = JSON.stringify({payload: {roomId: this.pendingLudoRoomId}})
+                        //     socketManager.broadcast(this.pendingLudoRoomId, 'EXIT_GAME', message)
+                        // }
+                        
+                    }
                 }
-
             }
             else{
-                const {entryFee, maxPlayers} = gameDetails;
-                const totalAmount = entryFee * maxPlayers;
-                const tax = totalAmount * 0.05;
-                const winAmount = totalAmount - tax;
-
-                const roomId = createId()
-                const game = new LudoGame(gameId, roomId, user.getUserId(), winAmount);
-                socketManager.addUser(roomId, user)
-                this.ludogames.push(game);
-                user.getSocket().send(`New game created with roomId: ${roomId}`)
-                console.log('NEW game created')
-                this.pendingLudoRoomId = roomId;
+                if(gameDetails.gameType === "LUDO"){
+                    const {entryFee, maxPlayers} = gameDetails;
+                    const totalAmount = entryFee * maxPlayers;
+                    const tax = totalAmount * 0.05;
+                    const winAmount = totalAmount - tax;
+    
+                    const roomId = createId()
+                    const game = new LudoGame(gameId, roomId, user.getUserId(), winAmount);
+                    socketManager.addUser(roomId, user)
+                    this.ludogames.push(game);
+                    user.getSocket().send(`New game created with roomId: ${roomId}`)
+                    console.log('NEW game created')
+                    this.pendingRooms.set(gameId, roomId);
+                    return
+                }
+                if(gameDetails.gameType === "FAST_LUDO"){
+                    const {entryFee, maxPlayers} = gameDetails;
+                    const totalAmount = entryFee * maxPlayers;
+                    const tax = totalAmount * 0.05;
+                    const winAmount = totalAmount - tax;
+    
+                    const roomId = createId()
+                    const game = new FastLudoGame(gameId, roomId, user.getUserId(), winAmount);
+                    socketManager.addUser(roomId, user)
+                    this.fastludogames.push(game);
+                    user.getSocket().send(`New game created with roomId: ${roomId}`)
+                    console.log('NEW game created')
+                    this.pendingRooms.set(gameId, roomId);
+                }
             }
         });
 
@@ -120,12 +174,21 @@ export class GameManager {
                 return
             }
             const {roomId} = message.payload
-            const ludogame = this.ludogames.find(l => l.getRoomId() == roomId);
-            console.log(ludogame)
-            console.log(ludogame?.getPlayerIds() || [])
-            if(ludogame){
-                ludogame.rollDice(roomId, user.getUserId());
+            const gameType = this.roomManager.get(roomId);
+            if(gameType === "LUDO"){
+                const ludogame = this.ludogames.find(l => l.getRoomId() == roomId);
+                if(ludogame){
+                    ludogame.rollDice(roomId, user.getUserId());
+                }
+                return
             }
+            if(gameType === "FAST_LUDO"){
+                const fastludogame = this.fastludogames.find(l => l.getRoomId() == roomId);
+                if(fastludogame){
+                    fastludogame.rollDice(roomId, user.getUserId());
+                }
+            }
+            
         })
 
         user.getSocket().on('MOVE_PIECE', async(data) => {
@@ -185,14 +248,18 @@ export class GameManager {
     }
 
     private deleteGame(roomId: string){
-        this.ludogames = this.ludogames.filter(game => game.getRoomId() !== roomId);
+        const gameType = this.roomManager.get(roomId);
+        if(gameType === "LUDO"){
+            this.ludogames = this.ludogames.filter(game => game.getRoomId() !== roomId);
+        }
+        else if(gameType === "FAST_LUDO"){
+            this.fastludogames = this.fastludogames.filter(game => game.getRoomId() !== roomId)
+        }
         socketManager.deleteRoom(roomId)
     }
 
     private async storeLudoGameToDB(game: LudoGame){
         const playerIds = game.getPlayerIds();
-        console.log(playerIds)
-
         await prisma.room.create({
             data: {
                 roomId: game.getRoomId(),
