@@ -122,6 +122,14 @@ router.put("/edit/:id", async (req, res) => {
       return res.status(400).json({message: "Invalid credentials"})
     }
     const { name, email, password, role } = req.body;
+    const checkAdmin = await prisma.admin.findUnique({
+      where: {
+        email,
+      },
+    })
+    if(checkAdmin){
+      return res.status(400).json({message: 'Email already exists'})
+    }
     admin = await prisma.admin.update({
       where: {
         adminId,
