@@ -86,7 +86,7 @@ router.get("/admins", async (req, res) => {
 // @route   GET /api/admin/admin/:id
 // @desc    Get an admin by ID
 // @access  Private/Admin
-router.get("/admin/:id", async (req, res) => {
+router.get("/fetchadmin/:id", async (req, res) => {
   try {
     const adminId = req.params.id
     const admin = await prisma.admin.findUnique({
@@ -142,7 +142,7 @@ router.put("/edit/:id", async (req, res) => {
 // @route   DELETE /api/admin/admin/:id
 // @desc    Delete an admin by ID
 // @access  Private/Admin
-router.delete("/admin/:id", async (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
     try {
         const adminId = req.params.id
         const admin = await prisma.admin.delete({
@@ -158,5 +158,40 @@ router.delete("/admin/:id", async (req, res) => {
         return res.status(500).json({message: 'Internal server error'})
     }
 });
+
+router.put('/transfer/:adminId', async(req, res) => {
+  const adminId = req.params.adminId;
+  try {
+    await prisma.$transaction(async(tx) => {
+      const currentAdmin = await tx.admin.findFirst({
+        where:{
+          role: 'superadmin'
+        }
+      });
+      if(!currentAdmin){
+        return res.status(400).json({message: 'You are not authorized to perform this operation'})
+      }
+      await tx.admin.update({
+        where: {
+          adminId: currentAdmin?.adminId
+        },
+        data:{
+          role: 'admin'
+        }
+      })
+      await tx.admin.update({
+        where: {
+          adminId
+        },
+        data:{
+          role: 'superadmin'
+        }
+      })
+    })
+    return res.status(200).json({message: 'Super admin successfully updated'})
+  } catch (error) {
+    return res.status(500).json({message: 'Internal server error'})
+  }
+})
 
 export default router;

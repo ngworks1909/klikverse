@@ -2,6 +2,10 @@ export type GAME_STATUS = "Pending" | "Running" | "Finished"
 import prisma from '../lib/auth';
 import {socketManager} from '../manager/SocketManager'
 
+type GameUser = {
+    userId: string,
+    socketId: string
+}
 
 export class LudoGame {
     private gameId: string;
@@ -27,10 +31,33 @@ export class LudoGame {
         this.winAmount = winAmount
     }
 
+
+    public getTurnSocket(){
+        const playerId = this.players[this.currentTurn];
+        const roomId = socketManager.getPlayers().get(playerId)
+        if(!roomId) return
+        const users = socketManager.getRooms().get(roomId)
+        if(!users) return
+        const player = users.find(user => user.getUserId() === playerId);
+        if(!player) return
+        return player.getSocket().id
+    }
+    public getSockets(){
+        const socketIds:GameUser[] =[];
+        const users = socketManager.getRooms().get(this.roomId)
+        if(!users) return;
+        users.forEach(user => {
+            socketIds.push({userId: user.getUserId(), socketId: user.getSocket().id})
+        });
+        return socketIds
+    }
     public startGame(){
         this.gameStatus = "Running";
-        socketManager.broadcast(this.roomId, 'START_GAME', 'The game has started');
-        socketManager.broadcast(this.roomId, 'CURRENT_TURN', `${this.players[this.currentTurn]}`)
+        const users = this.getSockets()
+        const message = JSON.stringify({roomId: this.roomId, users})
+        socketManager.broadcast(this.roomId, 'START_GAME', message);
+
+        socketManager.broadcast(this.roomId, 'CURRENT_TURN', `${this.getTurnSocket()}`)
     }
     public getRoomId(){
       return this.roomId;
@@ -146,12 +173,12 @@ export class LudoGame {
 
     public nextTurn(){
         if(this.lastScore === 6){
-            socketManager.broadcast(this.roomId, 'CURRENT_TURN', this.players[this.currentTurn])
+            socketManager.broadcast(this.roomId, 'CURRENT_TURN', `${this.getTurnSocket()}`)
             return
         }
 
         this.currentTurn = (this.currentTurn + 1) % this.players.length;
-        socketManager.broadcast(this.roomId, 'CURRENT_TURN', this.players[this.currentTurn]);
+        socketManager.broadcast(this.roomId, 'CURRENT_TURN', `${this.getTurnSocket()}`);
         this.lastScore = 0;
     }
 

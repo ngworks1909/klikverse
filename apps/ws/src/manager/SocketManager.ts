@@ -31,7 +31,7 @@ export class SocketManager{
             this.players.set(user.getUserId(), roomId)
         }
 
-        const data = JSON.stringify({userId: user.getUserId(), roomId})
+        const data = JSON.stringify({socketId: user.getSocket(), roomId})
         this.broadcast(roomId, 'USER_JOINED', data)
 
     }
@@ -77,14 +77,16 @@ export class SocketManager{
             console.log('No users in room?');
             return
         }
-        if(event === "CURRENT_TURN"){
-            const playerId = message;
-            
-
-        }
         users.forEach((user) => {
             user.getSocket().emit(event, message)
         })
+    }
+
+    public getRooms(){
+        return this.rooms
+    }
+    public getPlayers(){
+        return this.players
     }
 }
 
