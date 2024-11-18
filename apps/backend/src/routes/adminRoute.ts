@@ -2,7 +2,7 @@ import bcrypt from "argon2";
 import express from "express";
 import jwt from "jsonwebtoken";
 import {prisma} from '../lib/auth'
-import { validateAdmin } from "../zod/validateAdmin";
+import { validateAdmin, validateUpdateAdmin } from "../zod/validateAdmin";
 
 const router = express.Router();
 
@@ -117,7 +117,7 @@ router.put("/edit/:id", async (req, res) => {
     if(!admin){
       return res.status(400).json({message: 'Invalid credentials'})
     }
-    const adminValidate = validateAdmin.safeParse(req.body);
+    const adminValidate = validateUpdateAdmin.safeParse(req.body);
     if(!adminValidate.success){
       return res.status(400).json({message: "Invalid credentials"})
     }
