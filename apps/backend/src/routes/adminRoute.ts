@@ -127,7 +127,7 @@ router.put("/edit/:id", async (req, res) => {
         email,
       },
     })
-    if(checkAdmin){
+    if(checkAdmin && checkAdmin.email !== email){
       return res.status(400).json({message: 'Email already exists'})
     }
     admin = await prisma.admin.update({
