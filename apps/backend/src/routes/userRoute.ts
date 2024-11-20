@@ -114,6 +114,9 @@ router.post('/login', async(req, res) => {
         if(!user){
             return res.status(400).json({message: 'Mobile number not registered'})
         }
+        if(user.suspended){
+            return res.status(403).json({message: "User suspended"})
+        }
         const otp = generateOtp()
         user = await prisma.user.update({
             where: {
@@ -218,6 +221,30 @@ router.get('/fetchuser', async(req, res) => {
     }
 })
 
+interface userJwtClaims {
+    userId: string
+}
+
+router.put('/suspend/:userId', async(req, res) => {
+    try {
+        const userId = req.params.userId;
+        if(!userId){
+            return res.status(400).json({message: 'Invalid user'})
+        }
+        await prisma.user.update({
+            where: {
+                userId
+            },
+            data: {
+                suspended: true
+            }
+        });
+        return res.status(200).json({message: 'User suspended successfully'})
+    } catch (error) {
+        return res.status(500).json({message: 'Internal server error'})
+    }
+})
+
 router.put('/resendotp', async(req, res) => {
     try {
         const {mobile} = req.body
@@ -261,12 +288,14 @@ router.get('/fetchalluser', async(req, res) => {
                 userId: true,
                 username: true,
                 mobile: true,
+                suspended: true,
                 wallet: {
                     select: {
                         totalBalance: true
                     },
                     take: 1
-                }
+                },
+                
             }
         })
         return res.status(200).json({users})

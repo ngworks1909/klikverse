@@ -23,6 +23,7 @@ model User {
   mobile       String         @unique
   role         UserRole       @default(user)
   token        String         @default("")
+  suspended    Boolean        @default(false)
   wallet       Wallet[]
   transactions Transactions[]
   rooms        RoomPlayer[]    // Relation to the join table
