@@ -18,7 +18,7 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
     if (decoded && typeof decoded === 'object' && 'role' in decoded) {
   
         // Check if the user is an admin
-        if (decoded.role !== 'admin') {
+        if (decoded.role !== 'admin' || decoded.role !== 'superadmin') {
           return res.status(403).send('Access denied. Admins only.');
         }
   
