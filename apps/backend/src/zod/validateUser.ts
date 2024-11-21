@@ -6,3 +6,8 @@ export const validateUser = z.object({
         return /^[6-9][0-9]{9}$/.test(value);
       })
 })
+
+export const validateDevice = z.object({
+  userId: z.string(),
+  deviceId: z.string()
+})

@@ -221,9 +221,7 @@ router.get('/fetchuser', async(req, res) => {
     }
 })
 
-interface userJwtClaims {
-    userId: string
-}
+
 
 router.put('/suspend/:userId', async(req, res) => {
     try {
@@ -303,5 +301,42 @@ router.get('/fetchalluser', async(req, res) => {
         return res.status(500).json({message: 'Internal server error'})
     }
 })
+
+
+interface userJwtClaims {
+    userId: string
+}
+router.post('/storetoken', async (req, res) => {
+    const token = req.headers["authorization"];
+    if (!token) {
+      return res.status(401).send("Unauthorized token");
+    }
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET || "secret") as userJwtClaims;
+    } catch (error) {
+        return res.status(403).json({message: 'Token expired'});
+    }
+    if(!decoded || !decoded.userId) return res.status(403).json({message: "Invalid token"})
+    const { userId } = decoded;
+    const {  deviceId } = req.body;
+    try {
+      const user = await prisma.user.findUnique({
+        where: { userId },
+      });
+      if(!user){
+         return res.status(403).json({message: "User not found"})
+      }
+      await prisma.user.update({
+        where: { userId },
+        data: { deviceId },
+      });
+  
+      return res.status(200).json({ message: 'Token stored successfully' });
+    } catch (error) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
 
 export default router;

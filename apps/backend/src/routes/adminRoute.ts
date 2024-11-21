@@ -2,7 +2,9 @@ import bcrypt from "argon2";
 import express from "express";
 import jwt from "jsonwebtoken";
 import {prisma} from '../lib/auth'
-import { validateAdmin, validateUpdateAdmin } from "../zod/validateAdmin";
+import { validateAdmin, validateNotification, validateUpdateAdmin } from "../zod/validateAdmin";
+import {publisher} from '../lib/firebase'
+import {getMessaging} from 'firebase/messaging'
 
 const router = express.Router();
 
@@ -182,6 +184,73 @@ router.put('/transfer/:adminId', async(req, res) => {
   } catch (error) {
     return res.status(500).json({message: 'Internal server error'})
   }
+})
+
+router.post('/sendmessage', async(req, res) => {
+  const users = await prisma.user.findMany({
+    where: {
+      deviceId: {
+        not: null
+      },
+    },
+    select: {
+      deviceId: true
+    }
+  })
+  if(users.length === 0){
+    return res.status(400).json({message: 'No active users found'})
+  }
+  const notificationValidate = validateNotification.safeParse(req.body);
+  if(!notificationValidate.success){
+    return res.status(400).json({message: 'Invalid request'})
+  }
+  const {title, body} = req.body
+
+  const message = {
+    notification: {
+      title,
+      body,
+    }
+  };
+
+  const batchSize = 500; // Firebase's max limit per request
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (let i = 0; i < users.length; i += batchSize) {
+      const batchTokens = users.slice(i, i + batchSize).map((user) => user.deviceId);
+
+      const response = await fetch(`https://fcm.googleapis.com/v1/projects/${process.env.FIREBASE_MESSAGE_SENDER_ID}/messages:send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.FIREBASE_AUTH_TOKEN}`,
+        },
+        body: JSON.stringify({
+          registration_ids: batchTokens,
+          notification: {
+            title,
+            body,
+          },
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (responseData.success) {
+        successCount += responseData.success;
+      }
+
+      if (responseData.failure) {
+        failureCount += responseData.failure;
+      }
+    }
+
+    // Step 4: Respond with the result
+    return res.status(200).json({
+      message: `Push notifications sent successfully to ${successCount} users. Failed for ${failureCount} users.`,
+    });
+
 })
 
 export default router;
