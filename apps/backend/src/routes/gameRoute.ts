@@ -45,7 +45,7 @@ router.post('/create', verifyAdmin, async(req, res) => {
 //     }
 // });
 
-router.delete('/fetchAllGames', verifyAdmin, async(req, res) => {
+router.get('/fetchAllGames', verifyAdmin, async(req, res) => {
     try {
         const games = await prisma.game.findMany({});
         return res.status(200).json({games})
