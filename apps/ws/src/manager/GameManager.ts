@@ -26,6 +26,7 @@ export class GameManager {
     private onlineUsers: User[];
     private ludogames: LudoGame[];
     private fastludogames: FastLudoGame[]
+    
     private pendingRooms: Map<string, string>
     private roomManager: Map<string, "LUDO" | "FAST_LUDO" | "RUMMY" | "CRICKET">
 

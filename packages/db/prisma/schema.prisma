@@ -131,3 +131,19 @@ enum GameType {
   CRICKET
   RUMMY
 }
+
+model Ticket{
+  ticketId String @id @default(cuid())
+  issue   String 
+  email String
+  name String
+  description String 
+  status TicketStatus @default(Open)
+  createdAt DateTime @default(now())
+  image String?
+}
+
+enum TicketStatus {
+  Open
+  Closed
+}

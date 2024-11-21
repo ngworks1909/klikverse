@@ -9,6 +9,7 @@
     "view": "cd packages/db/ && npx prisma studio"
   },
   "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
     "prettier": "^3.2.5",
     "turbo": "^2.2.3",
     "typescript": "^5.4.5"
@@ -23,6 +24,7 @@
   ],
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv-cli": "^7.4.2"
+    "dotenv-cli": "^7.4.2",
+    "nodemailer": "^6.9.16"
   }
 }
