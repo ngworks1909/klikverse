@@ -10,6 +10,7 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
 
   // Verify the token
   jwt.verify(token, process.env.JWT_SECRET || "secret", (err, decoded) => {
+    console.log(decoded)
     if (!decoded || err) {
       return res.status(403).send('Failed to authenticate token.');
     }
@@ -18,7 +19,7 @@ export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => 
     if (decoded && typeof decoded === 'object' && 'role' in decoded) {
   
         // Check if the user is an admin
-        if (decoded.role !== 'admin' || decoded.role !== 'superadmin') {
+        if (decoded.role !== 'admin' && decoded.role !== 'superadmin') {
           return res.status(403).send('Access denied. Admins only.');
         }
   

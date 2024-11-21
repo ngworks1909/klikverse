@@ -52,8 +52,7 @@ router.post('/login', async(req, res) => {
       return res.status(400).json({message: "Inavlid email or password"})
     }
     const token = jwt.sign( { id: admin.adminId, role: admin.role }, 
-      process.env.JWT_SECRET || "secret", 
-      { expiresIn: "1h" } // Token expires in 1 hour
+      process.env.JWT_SECRET || "secret"
     );
 
     return res.status(200).json({
