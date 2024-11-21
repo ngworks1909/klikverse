@@ -21,9 +21,12 @@ router.post('/create', verifyAdmin, async(req, res) => {
                 maxPlayers,
                 entryFee,
                 prizePool
+            },
+            select: {
+                gameId: true
             }
         });
-        return res.status(200).json({message: 'Game created successfully'})
+        return res.status(200).json({message: 'Game created successfully', gameId: game.gameId})
     } catch (error) {
         return res.status(500).json({message: 'Internal server error'})
     }
