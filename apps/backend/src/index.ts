@@ -6,6 +6,7 @@ import userRouter from './routes/userRoute'
 import transactionRouter from './routes/transactionRoute'
 import bannerRouter from './routes/bannerRoute'
 import gameRouter from './routes/gameRoute'
+import ticketRouter from './routes/ticketRoute'
 
 dotenv.config()
 
@@ -25,6 +26,7 @@ app.use('/api/user', userRouter)
 app.use('/api/transactions', transactionRouter)
 app.use('/api/banner', bannerRouter)
 app.use('/api/game', gameRouter)
+app.use('/api/ticket', ticketRouter)
 
 app.get("/",(req,res)=>{
     res.send("Hello user");
