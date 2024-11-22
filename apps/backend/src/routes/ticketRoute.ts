@@ -29,9 +29,11 @@ async function solveTicket(ticketId: string){
 }
 
 
+
 router.post('/create', async (req, res) => {
     try {
         const ticketValidation = validateTicket.safeParse(req.body);
+        // console.log(req.body.email + " " + req.body.name + " " + req.body.issue + " " + req.body.description + " " + req.body.image)
         if(!ticketValidation.success) return res.status(400).json({message: 'Invalid data'})
         const { email, name, issue, description, image } = ticketValidation.data;
         const ticket = await prisma.ticket.create({
@@ -46,6 +48,13 @@ router.post('/create', async (req, res) => {
                 ticketId: true
             }
         })
+        var mailOptions = {
+            from: 'support@v1games.com',
+            to: email,
+            subject: issue,
+            text: "Thank you for contacting V1 games support. We have received your query and will respond within 24 hours."
+        };
+        transporter.sendMail(mailOptions);
         return res.status(200).json({message: 'Ticket created successfully', ticketId: ticket.ticketId})
     } catch (error) {
         return res.status(500).json({message: 'Internal server error'})
@@ -70,11 +79,11 @@ router.post('/resolve', async (req, res) => {
             from: 'support@v1games.com',
             to: input,
             subject: 'You have reached out to V1 games support',
-            text: textarea
+            text: textarea + `${solved === "Closed" ? " Your issue has been resolved. Please feel free to contact us if you encounter any further concerns.": ""}`
         };
         try {
             await transporter.sendMail(mailOptions);
-            if(solved){
+            if(solved === "Closed"){
                 const ticket = await prisma.ticket.findUnique({
                     where:{
                         ticketId
