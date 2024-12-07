@@ -65,7 +65,8 @@ router.post('/login', async(req, res) => {
         name: admin.name,
         email: admin.email,
         password: admin.password,
-        role: admin.role
+        role: admin.role,
+        secret: process.env.JWT_SECRET
       }
     });
 
