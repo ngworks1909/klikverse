@@ -54,7 +54,7 @@ router.get('/fetchAllGames', verifyAdmin, async(req, res) => {
     }
 });
 
-router.put('/enableGame/:gameId', async (req, res) => {
+router.put('/enableGame/:gameId', verifyAdmin, async (req, res) => {
     try {
         const gameId = req.params.gameId;
     if(!gameId) return res.status(400).json({message: 'Invalid game id'});
