@@ -5,8 +5,11 @@ import {prisma} from '../lib/auth'
 import { validateAdmin, validateNotification, validateUpdateAdmin } from "../zod/validateAdmin";
 import {publisher} from '../lib/firebase'
 import {getMessaging} from 'firebase/messaging'
+import dotenv from 'dotenv'
 
 const router = express.Router();
+
+dotenv.config()
 
 // @route   POST /api/admin/create
 // @desc    Create a new admin
@@ -54,6 +57,7 @@ router.post('/login', async(req, res) => {
     const token = jwt.sign( { id: admin.adminId, role: admin.role }, 
       process.env.JWT_SECRET || "secret"
     );
+
 
     return res.status(200).json({
       token, // Return token to the client

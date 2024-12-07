@@ -28,6 +28,7 @@ model User {
   wallet       Wallet[]
   transactions Transactions[]
   rooms        RoomPlayer[]    // Relation to the join table
+  withdrawls  Withdraw[]
 }
 
 enum UserRole {
@@ -58,7 +59,7 @@ model Banner {
 
 model Wallet {
   walletId     String   @id @default(cuid())
-  userId       String
+  userId       String   @unique
   user         User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
   totalBalance Float    @default(0)
   deposit      Float    @default(0)
@@ -87,6 +88,21 @@ enum TransactionStatus {
   Pending
   Paid
   Failed
+}
+
+model Withdraw {
+  withdrawId  String  @id @default(cuid())
+  userId       String
+  user         User   @relation(fields: [userId], references: [userId])
+  amount       Float
+  status       WithdrawalStatus  @default(PENDING) // PENDING, SUCCESS, FAILED
+  timestamp    DateTime @default(now())
+}
+
+enum WithdrawalStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }
 
 model Game {

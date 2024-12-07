@@ -1,16 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers['authorization'] ; // Get token from the 'Authorization' header
-
   if (!token) {
     return res.status(403).send('No token provided.');
   }
 
   // Verify the token
   jwt.verify(token, process.env.JWT_SECRET || "secret", (err, decoded) => {
-    console.log(decoded)
     if (!decoded || err) {
       return res.status(403).send('Failed to authenticate token.');
     }
